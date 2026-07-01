@@ -20,7 +20,7 @@
 - 📊 60+ health parameters with reference ranges
 - 💯 Health Score (0–100) and Risk Level
 - 📈 4 interactive charts (Chart.js)
-- 🤖 AI Chat powered by Google Gemini
+- 🤖 AI Chat
 - 🥗 Diet, Exercise & Lifestyle recommendations
 - 📄 PDF export of full analysis
 - 🌙 Dark / Light mode
