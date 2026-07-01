@@ -26,10 +26,7 @@
 - 🌙 Dark / Light mode
 - 💾 Report history saved in browser
 - 📱 Fully responsive design
-
-## 🛠️ Tech Stack
-
-HTML5 • CSS3 • Vanilla JavaScript • Tesseract.js • Chart.js • jsPDF • OpenRouter API
+  
 
 ## ⚠️ Disclaimer
 
