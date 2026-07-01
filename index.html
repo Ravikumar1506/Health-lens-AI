@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HealthLens AI — Professional Health Report Analyzer</title>
+  <meta name="description" content="AI-powered health report analyzer. Upload any medical report and get instant professional analysis." />
+
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <!-- Tesseract.js OCR -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- html2canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body> 
+
+<nav class="topnav" id="topnav">
+  <div class="topnav-brand">
+    <div class="brand-icon">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="28" height="28" rx="8" fill="url(#brandGrad)"/>
+        <path d="M7 14h3l2-5 3 10 2-7 2 4 2-2h1" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs>
+          <linearGradient id="brandGrad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#2563EB"/>
+            <stop offset="1" stop-color="#0EA5E9"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <span class="brand-name">HealthLens AI</span>
+      <span class="brand-sub">Health Report Analyzer</span>
+    </div>
+  </div>
+
+  <div class="topnav-actions">
+    <button class="nav-btn" id="btnHistory" title="Report History">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/>
+      </svg>
+      <span>History</span>
+    </button>
+    <button class="nav-btn" id="btnSettings" title="Settings">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.07 4.93A10 10 0 0 0 4.93 19.07M19.07 4.93L16.24 7.76M4.93 19.07l2.83-2.83"/>
+        <path d="M2.05 13A10 10 0 0 0 22 13M2.05 11A10 10 0 0 0 22 11"/>
+      </svg>
+      <span>Settings</span>
+    </button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle Dark Mode">
+      <span class="theme-icon light-icon">☀️</span>
+      <span class="theme-icon dark-icon">🌙</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+     MAIN LAYOUT
+═══════════════════════════════════════════ -->
+<div class="app-layout" id="appLayout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <nav class="sidebar-nav">
+      <button class="sidebar-item active" data-tab="upload">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17,8 12,3 7,8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <span>Upload</span>
+      </button>
+      <button class="sidebar-item" data-tab="dashboard" id="navDashboard">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="sidebar-item" data-tab="parameters" id="navParameters">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <span>Parameters</span>
+      </button>
+      <button class="sidebar-item" data-tab="analysis" id="navAnalysis">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span>AI Analysis</span>
+      </button>
+      <button class="sidebar-item" data-tab="chat" id="navChat">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span>AI Chat</span>
+      </button>
+      <button class="sidebar-item" data-tab="recommendations" id="navRecommendations">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22,4 12,14.01 9,11.01"/>
+        </svg>
+        <span>Advice</span>
+      </button>
+      <button class="sidebar-item" data-tab="ocr" id="navOcr">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="4,7 4,4 20,4 20,7"/><line x1="9" y1="20" x2="15" y2="20"/>
+          <line x1="12" y1="4" x2="12" y2="20"/>
+        </svg>
+        <span>OCR Text</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="sidebar-export-btn" id="btnExportPdf">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7,10 12,15 17,10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Export PDF
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="mainContent">
+
+    <!-- ─── TAB: UPLOAD ─── -->
+    <section class="tab-panel active" id="tab-upload">
+      <div class="panel-header">
+        <h1 class="panel-title">Upload Medical Report</h1>
+        <p class="panel-subtitle">Upload any pathology, blood test, or diagnostic report to begin AI-powered analysis.</p>
+      </div>
+
+      <!-- Drop Zone -->
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg" hidden />
+        <div class="upload-zone-inner" id="uploadZoneInner">
+          <div class="upload-icon-wrap">
+            <svg class="upload-main-icon" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
+              <path d="M12 12v9"/><path d="m8 17 4-4 4 4"/>
+            </svg>
+          </div>
+          <h2 class="upload-heading">Drop your medical report here</h2>
+          <p class="upload-subtext">Supports PDF, PNG, JPG, JPEG — Max 20 MB</p>
+          <div class="upload-formats">
+            <span class="format-badge">PDF</span>
+            <span class="format-badge">PNG</span>
+            <span class="format-badge">JPG</span>
+            <span class="format-badge">JPEG</span>
+          </div>
+          <button class="btn-primary browse-btn" id="browseBtnMain">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17,8 12,3 7,8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Browse File
+          </button>
+        </div>
+      </div>
+
+      <!-- File Preview Card (hidden until file selected) -->
+      <div class="file-preview-card hidden" id="filePreviewCard">
+        <div class="file-preview-header">
+          <div class="file-thumb-wrap" id="fileThumbWrap">
+            <img id="filePreviewImg" class="file-preview-img hidden" alt="Report preview" />
+            <div class="pdf-thumb hidden" id="pdfThumb">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                <polyline points="14,2 14,8 20,8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                <line x1="10" y1="9" x2="8" y2="9"/>
+              </svg>
+              <span>PDF Document</span>
+            </div>
+          </div>
+          <div class="file-meta">
+            <span class="file-name" id="previewFileName">filename.pdf</span>
+            <span class="file-size" id="previewFileSize">0 KB</span>
+            <span class="file-type-badge" id="previewFileType">PDF</span>
+          </div>
+          <div class="file-actions">
+            <button class="btn-outline" id="btnReplaceFile">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="1,4 1,10 7,10"/><polyline points="23,20 23,14 17,14"/>
+                <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+              </svg>
+              Replace
+            </button>
+            <button class="btn-danger-outline" id="btnRemoveFile">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/><path d="M14 11v6"/>
+              </svg>
+              Remove
+            </button>
+          </div>
+        </div>
+
+        <!-- OCR Progress -->
+        <div class="ocr-progress-wrap" id="ocrProgressWrap">
+          <div class="ocr-progress-header">
+            <span class="ocr-label" id="ocrLabel">Initializing OCR Engine…</span>
+            <span class="ocr-pct" id="ocrPct">0%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="ocrProgressBar" style="width:0%"></div>
+          </div>
+          <div class="ocr-steps" id="ocrSteps">
+            <span class="ocr-step" id="step1">⏳ Loading engine</span>
+            <span class="ocr-step" id="step2">⏳ Reading document</span>
+            <span class="ocr-step" id="step3">⏳ Extracting text</span>
+            <span class="ocr-step" id="step4">⏳ Analyzing parameters</span>
+            <span class="ocr-step" id="step5">⏳ Generating report</span>
+          </div>
+        </div>
+
+        <!-- Analyze Button -->
+        <div class="analyze-btn-wrap" id="analyzeBtnWrap">
+          <button class="btn-primary btn-analyze" id="btnAnalyze">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            Analyze Report
+          </button>
+        </div>
+      </div>
+
+      <!-- Supported Reports Info -->
+      <div class="supported-reports">
+        <h3 class="supported-title">Supported Report Types</h3>
+        <div class="supported-grid">
+          <div class="supported-chip">🩸 CBC / Blood Test</div>
+          <div class="supported-chip">🧪 LFT / KFT</div>
+          <div class="supported-chip">💊 Vitamin Panel</div>
+          <div class="supported-chip">🦋 Thyroid Function</div>
+          <div class="supported-chip">🍬 Diabetes / HbA1c</div>
+          <div class="supported-chip">❤️ Lipid Profile</div>
+          <div class="supported-chip">🫧 Urine Analysis</div>
+          <div class="supported-chip">📋 Prescriptions</div>
+          <div class="supported-chip">🫀 ECG Summary</div>
+          <div class="supported-chip">🦴 X-Ray / MRI</div>
+          <div class="supported-chip">🏥 Lab Reports</div>
+          <div class="supported-chip">🔬 Pathology</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── TAB: DASHBOARD ─── -->
+    <section class="tab-panel" id="tab-dashboard">
+      <div class="panel-header">
+        <h1 class="panel-title">Health Dashboard</h1>
+        <p class="panel-subtitle" id="dashboardSubtitle">Upload a report to view your personalized health dashboard.</p>
+      </div>
+
+      <!-- Patient Card + Health Score Row -->
+      <div class="dashboard-top-row">
+        <!-- Patient Info Card -->
+        <div class="glass-card patient-card" id="patientCard">
+          <div class="card-badge" id="reportTypeBadge">—</div>
+          <div class="patient-avatar" id="patientAvatar">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div class="patient-info">
+            <div class="patient-name" id="displayPatientName">—</div>
+            <div class="patient-meta-row">
+              <span class="patient-meta-item"><strong>Age:</strong> <span id="displayAge">—</span></span>
+              <span class="patient-meta-item"><strong>Gender:</strong> <span id="displayGender">—</span></span>
+              <span class="patient-meta-item"><strong>ID:</strong> <span id="displayPatientId">—</span></span>
+            </div>
+            <div class="patient-meta-row">
+              <span class="patient-meta-item"><strong>Hospital:</strong> <span id="displayHospital">—</span></span>
+              <span class="patient-meta-item"><strong>Doctor:</strong> <span id="displayDoctor">—</span></span>
+            </div>
+            <div class="patient-meta-row">
+              <span class="patient-meta-item"><strong>Date:</strong> <span id="displayDate">—</span></span>
+              <span class="patient-meta-item"><strong>Report No:</strong> <span id="displayReportNo">—</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Health Score -->
+        <div class="glass-card score-card">
+          <h3 class="card-title">Overall Health Score</h3>
+          <div class="score-circle-wrap">
+            <canvas id="scoreGauge" width="180" height="180"></canvas>
+            <div class="score-overlay">
+              <span class="score-number" id="scoreNumber">—</span>
+              <span class="score-label">/ 100</span>
+            </div>
+          </div>
+          <div class="risk-badge-wrap">
+            <span class="risk-badge" id="riskBadge">Awaiting Report</span>
+          </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="glass-card stats-card">
+          <h3 class="card-title">Parameter Summary</h3>
+          <div class="stat-items">
+            <div class="stat-item">
+              <div class="stat-circle normal-circle">
+                <span id="statNormal">0</span>
+              </div>
+              <span class="stat-label">Normal</span>
+            </div>
+            <div class="stat-item">
+              <div class="stat-circle borderline-circle">
+                <span id="statBorderline">0</span>
+              </div>
+              <span class="stat-label">Borderline</span>
+            </div>
+            <div class="stat-item">
+              <div class="stat-circle abnormal-circle">
+                <span id="statAbnormal">0</span>
+              </div>
+              <span class="stat-label">Abnormal</span>
+            </div>
+          </div>
+          <div class="last-upload-info">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+            <span id="lastUploadTime">No report uploaded yet</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="charts-row">
+        <div class="glass-card chart-card">
+          <h3 class="card-title">Parameter Status Distribution</h3>
+          <div class="chart-container">
+            <canvas id="pieChart"></canvas>
+          </div>
+        </div>
+        <div class="glass-card chart-card chart-card--wide">
+          <h3 class="card-title">Parameter Values vs Reference Range</h3>
+          <div class="chart-container chart-container--bar">
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Radar + Abnormal -->
+      <div class="charts-row">
+        <div class="glass-card chart-card">
+          <h3 class="card-title">Health Radar</h3>
+          <div class="chart-container">
+            <canvas id="radarChart"></canvas>
+          </div>
+        </div>
+        <div class="glass-card chart-card chart-card--wide" id="abnormalCard">
+          <h3 class="card-title">⚠️ Abnormal / Borderline Parameters</h3>
+          <div class="abnormal-list" id="abnormalList">
+            <div class="empty-state-small">Upload a report to see abnormal parameters.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── TAB: PARAMETERS ─── -->
+    <section class="tab-panel" id="tab-parameters">
+      <div class="panel-header">
+        <h1 class="panel-title">Detected Parameters</h1>
+        <p class="panel-subtitle">All values are extracted directly from your uploaded report via OCR. No values are estimated or assumed.</p>
+      </div>
+
+      <div class="params-toolbar">
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="paramSearch" class="search-input" placeholder="Search parameters…" />
+        </div>
+        <div class="filter-tabs">
+          <button class="filter-tab active" data-filter="all">All</button>
+          <button class="filter-tab" data-filter="normal">Normal</button>
+          <button class="filter-tab" data-filter="borderline">Borderline</button>
+          <button class="filter-tab" data-filter="abnormal">Abnormal</button>
+        </div>
+      </div>
+
+      <div class="params-table-wrap">
+        <table class="params-table" id="paramsTable">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Detected Value</th>
+              <th>Unit</th>
+              <th>Reference Range</th>
+              <th>Status</th>
+              <th>Deviation</th>
+            </tr>
+          </thead>
+          <tbody id="paramsTableBody">
+            <tr class="empty-row">
+              <td colspan="6">
+                <div class="empty-state">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                  </svg>
+                  <p>Upload a report to see extracted parameters here.</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ─── TAB: AI ANALYSIS ─── -->
+    <section class="tab-panel" id="tab-analysis">
+      <div class="panel-header">
+        <h1 class="panel-title">AI Medical Analysis</h1>
+        <p class="panel-subtitle">Professional clinical summary generated exclusively from your report values. No assumed or fabricated values.</p>
+      </div>
+
+      <div class="analysis-grid">
+        <!-- AI Summary -->
+        <div class="glass-card analysis-main-card" id="aiSummaryCard">
+          <div class="analysis-card-header">
+            <div class="ai-badge">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><circle cx="18" cy="6" r="3"/></svg>
+              AI Analysis
+            </div>
+            <span class="analysis-report-type" id="analysisReportType">—</span>
+          </div>
+          <div class="analysis-content" id="aiAnalysisContent">
+            <div class="empty-state">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <p>Upload and analyze a report to see the AI medical summary.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Abnormal Breakdown -->
+        <div class="glass-card analysis-side-card" id="abnormalBreakdownCard">
+          <h3 class="card-title">Abnormal Values Explained</h3>
+          <div id="abnormalBreakdownContent">
+            <div class="empty-state-small">No report analyzed yet.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── TAB: CHAT ─── -->
+    <section class="tab-panel" id="tab-chat">
+      <div class="panel-header">
+        <h1 class="panel-title">AI Health Assistant</h1>
+        <p class="panel-subtitle">Ask anything about your uploaded report. The AI answers only from your report data.</p>
+      </div>
+
+      <div class="chat-layout">
+        <div class="glass-card chat-card">
+          <!-- Chat Header -->
+          <div class="chat-header">
+            <div class="chat-status">
+              <div class="chat-avatar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/>
+                  <circle cx="18" cy="6" r="3" fill="currentColor"/>
+                </svg>
+              </div>
+              <div>
+                <div class="chat-name">HealthLens AI</div>
+                <div class="chat-online" id="chatOnlineStatus">Ready — Upload a report first</div>
+              </div>
+            </div>
+            <button class="btn-outline btn-sm" id="btnClearChat">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              Clear
+            </button>
+          </div>
+
+          <!-- Messages -->
+          <div class="chat-messages" id="chatMessages">
+            <div class="chat-message assistant-message" id="welcomeChatMsg">
+              <div class="chat-bubble">
+                <p>👋 Hello! I'm your AI Health Assistant. Upload a medical report and I'll help you understand every value, explain abnormal findings, and answer your questions based on the actual report data.</p>
+                <p style="margin-top:8px; font-size:13px; opacity:0.75;">⚠️ I can only answer questions based on your uploaded report. I cannot provide general medical advice.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Suggested Prompts -->
+          <div class="suggested-prompts" id="suggestedPrompts">
+            <div class="suggested-label">Suggested questions:</div>
+            <div class="prompt-chips" id="promptChips">
+              <button class="prompt-chip" data-prompt="Summarize my report in simple language.">Summarize my report</button>
+              <button class="prompt-chip" data-prompt="Which values are abnormal and what do they mean?">Explain abnormal values</button>
+              <button class="prompt-chip" data-prompt="Should I consult a doctor based on my report?">Should I see a doctor?</button>
+              <button class="prompt-chip" data-prompt="What diet should I follow based on my report?">Diet recommendations</button>
+              <button class="prompt-chip" data-prompt="Can I exercise or go to the gym based on my report?">Can I exercise?</button>
+              <button class="prompt-chip" data-prompt="What are possible causes of my abnormal values?">Possible causes</button>
+            </div>
+          </div>
+
+          <!-- Input -->
+          <div class="chat-input-wrap">
+            <textarea class="chat-input" id="chatInput" placeholder="Ask anything about your report… (Enter to send)" rows="1"></textarea>
+            <button class="chat-send-btn" id="chatSendBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22,2 15,22 11,13 2,9"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── TAB: RECOMMENDATIONS ─── -->
+    <section class="tab-panel" id="tab-recommendations">
+      <div class="panel-header">
+        <h1 class="panel-title">Health Recommendations</h1>
+        <p class="panel-subtitle">Personalized advice generated from your actual report findings. Always consult a physician before making medical decisions.</p>
+      </div>
+
+      <div class="reco-grid" id="recoGrid">
+        <!-- Cards injected by JS -->
+        <div class="glass-card reco-empty" id="recoEmpty">
+          <div class="empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22,4 12,14.01 9,11.01"/>
+            </svg>
+            <p>Upload and analyze a report to receive personalized recommendations.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div class="medical-disclaimer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span><strong>Medical Disclaimer:</strong> These recommendations are informational only, derived from your report. They are NOT a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider.</span>
+      </div>
+    </section>
+
+    <!-- ─── TAB: OCR TEXT ─── -->
+    <section class="tab-panel" id="tab-ocr">
+      <div class="panel-header">
+        <h1 class="panel-title">OCR Extracted Text</h1>
+        <p class="panel-subtitle">Raw text extracted from your uploaded document using Tesseract OCR. This is the source data for all analysis.</p>
+      </div>
+
+      <div class="glass-card ocr-card">
+        <div class="ocr-card-header">
+          <span class="ocr-detected-type">
+            Detected Type: <strong id="ocrDetectedType">—</strong>
+          </span>
+          <button class="btn-outline btn-sm" id="btnCopyOcr">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy Text
+          </button>
+        </div>
+        <pre class="ocr-text-display" id="ocrTextDisplay">Extracted text will appear here after upload and OCR processing.</pre>
+      </div>
+    </section>
+
+  </main><!-- /main-content -->
+</div><!-- /app-layout -->
+
+<!-- ═══════════════════════════════════════════
+     HISTORY PANEL (slide-in)
+═══════════════════════════════════════════ -->
+<div class="panel-overlay hidden" id="historyOverlay"></div>
+<div class="slide-panel hidden" id="historyPanel">
+  <div class="slide-panel-header">
+    <h2>Report History</h2>
+    <button class="close-panel-btn" id="closeHistoryBtn">✕</button>
+  </div>
+  <div class="slide-panel-body">
+    <div class="history-list" id="historyList">
+      <div class="empty-state-small">No reports in history yet.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SETTINGS PANEL (slide-in)
+═══════════════════════════════════════════ -->
+<div class="panel-overlay hidden" id="settingsOverlay"></div>
+<div class="slide-panel hidden" id="settingsPanel">
+  <div class="slide-panel-header">
+    <h2>Settings</h2>
+    <button class="close-panel-btn" id="closeSettingsBtn">✕</button>
+  </div>
+  <div class="slide-panel-body">
+
+    <div class="settings-section">
+      <h3 class="settings-section-title">Appearance</h3>
+      <div class="settings-row">
+        <div class="settings-label">
+          <strong>Dark Mode</strong>
+          <span>Switch to a dark interface for low-light environments</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="darkModeToggle" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-label">
+          <strong>Accent Color</strong>
+          <span>Choose the primary interface color</span>
+        </div>
+        <div class="color-swatches" id="colorSwatches">
+          <button class="color-swatch active" data-color="blue" style="background:#2563EB" title="Blue"></button>
+          <button class="color-swatch" data-color="teal" style="background:#0D9488" title="Teal"></button>
+          <button class="color-swatch" data-color="violet" style="background:#7C3AED" title="Violet"></button>
+          <button class="color-swatch" data-color="rose" style="background:#E11D48" title="Rose"></button>
+          <button class="color-swatch" data-color="orange" style="background:#EA580C" title="Orange"></button>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div class="settings-label">
+          <strong>Animations</strong>
+          <span>Enable smooth UI transitions and chart animations</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="animationsToggle" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3 class="settings-section-title">Data</h3>
+      <div class="settings-row settings-row--block">
+        <div class="settings-label">
+          <strong>Clear History</strong>
+          <span>Remove all saved report history from local storage</span>
+        </div>
+        <button class="btn-danger-outline" id="btnClearHistory">Clear All History</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3 class="settings-section-title">About</h3>
+      <div class="about-info">
+        <p><strong>HealthLens AI</strong> v1.0.0</p>
+        <p>Professional Health Report Analyzer</p>
+        <p style="margin-top:8px; opacity:0.7; font-size:13px;">All analysis is performed client-side. Your medical data never leaves your device.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ERROR TOAST
+═══════════════════════════════════════════ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ═══════════════════════════════════════════
+     LOADING OVERLAY
+═══════════════════════════════════════════ -->
+<div class="loading-overlay hidden" id="loadingOverlay">
+  <div class="loading-card">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Processing…</div>
+  </div>
+</div>
+
+<!-- Main Script -->
+<script src="script.js"></script>
+</body>
+</html>
