@@ -1,11 +1,7 @@
 # HealthLens AI 🏥
 ### AI-Powered Medical Health Report Analyzer
 
-🔗 **Live Demo:** https://ravikumar1506.github.io/Health-lens-AI/
-
 ## 🚀 How to Run
-
-**Online:** Just open the live demo link above — no setup needed.
 
 **Locally:**
 1. Download this repo as ZIP → Extract it
