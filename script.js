@@ -262,7 +262,7 @@ function extractLabeledField(text, labelPatterns, opts = {}) {
   // value chars: letters, spaces, dots; optionally digits (for IDs/dates)
   const valueCharClass = allowDigits ? `[A-Za-z0-9&\\.\\-'’,\\s]` : `[A-Za-z\\.\\-'’\\s]`;
   for (const label of labelPatterns) {
-    // Pattern: LABEL [:|-] VALUE   (value stops at newline, or at next known field label, or at 2+ spaces)
+    
     const re = new RegExp(
       label + `\\s*[:\\-]\\s*(${valueCharClass}{2,80}?)(?:\\n|\\s{2,}|$|(?=\\b(?:age|gender|sex|patient|name|doctor|dr\\.?|hospital|lab|clinic|date|id|no\\.?|report|ref|consultant|centre|center)\\b))`,
       'i'
